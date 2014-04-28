@@ -229,6 +229,14 @@ Finally, generate your implementations:
     $ gengen myslice.go intWithEqual > myslice_int.go
     $ gengen myslice.go *Person > myslice_person.go
 
+### Import and type naming inflexibility ###
+
+The `gengen` tool looks through the source code for specific strings
+in order to replace them in the AST.  Specifically, it looks for the
+import `github.com/joeshaw/gengen/generic` and the types `generic.T`,
+`generic.U`, and `generic.V`.  If you need to change these, you will
+also have to change the `gengen.go` source.
+
 ## Origins ##
 
 I had been mulling the idea of a generics generator for a while,
