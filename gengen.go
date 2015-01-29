@@ -8,7 +8,7 @@ import (
 	"go/token"
 	"os"
 
-	"code.google.com/p/go.tools/astutil"
+	"golang.org/x/tools/go/ast/astutil"
 )
 
 const pkgPath = "github.com/joeshaw/gengen/generic"
