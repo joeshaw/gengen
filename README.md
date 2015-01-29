@@ -24,6 +24,7 @@ this contrived linked-list implementation in `list.go`:
 ```go
 package list
 
+//go:generate gengen -o list_string.go -r "List -> StringList" list.go string
 import "github.com/alecthomas/gengen/generic"
 
 type List struct {
