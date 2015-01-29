@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
+	"io"
+	"io/ioutil"
 	"os"
 
 	"golang.org/x/tools/go/ast/astutil"
@@ -16,11 +20,11 @@ const genericPkg = "generic"
 
 var genericTypes = []string{"T", "U", "V"}
 
-func generate(filename string, typenames ...string) error {
+func generate(filename string, typenames ...string) ([]byte, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	f = replace(func(node ast.Node) ast.Node {
@@ -36,7 +40,8 @@ func generate(filename string, typenames ...string) error {
 
 		for i, t := range genericTypes {
 			if se.Sel.Name == t {
-				return ast.NewIdent(typenames[i])
+				return &ast.Ident{NamePos: 0, Name: typenames[i]}
+				//				return ast.NewIdent(typenames[i])
 			}
 		}
 
@@ -47,20 +52,38 @@ func generate(filename string, typenames ...string) error {
 		astutil.DeleteImport(fset, f, pkgPath)
 	}
 
-	err = format.Node(os.Stdout, fset, f)
-	return err
+	var buf bytes.Buffer
+	err = format.Node(&buf, fset, f)
+	return buf.Bytes(), err
 }
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Fprintf(os.Stderr, "usage: %s <file.go> <replacement types...>\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "example: %s list.go int string\n", os.Args[0])
+	var outfile = flag.String("o", "", "output file")
+	flag.Parse()
+
+	if flag.NArg() < 2 {
+		fmt.Fprintf(os.Stderr, "usage: %s [-o <output.go>] <file.go> <replacement types...>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "example: %s -o lists.go list_gen.go int string\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	err := generate(os.Args[1], os.Args[2:]...)
+	buf, err := generate(flag.Arg(0), flag.Args()[1:]...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
-		os.Exit(1)
+		die(err)
 	}
+
+	if *outfile == "" {
+		_, err = io.Copy(os.Stdout, bytes.NewBuffer(buf))
+	} else {
+		err = ioutil.WriteFile(*outfile, buf, 0644)
+	}
+
+	if err != nil {
+		die(err)
+	}
+}
+
+func die(err error) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+	os.Exit(1)
 }
