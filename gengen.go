@@ -41,7 +41,6 @@ func generate(filename string, typenames ...string) ([]byte, error) {
 		for i, t := range genericTypes {
 			if se.Sel.Name == t {
 				return &ast.Ident{NamePos: 0, Name: typenames[i]}
-				//				return ast.NewIdent(typenames[i])
 			}
 		}
 
