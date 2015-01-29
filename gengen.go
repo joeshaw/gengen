@@ -14,7 +14,7 @@ import (
 	"labix.org/v2/pipe"
 )
 
-const pkgPath = "github.com/joeshaw/gengen/generic"
+const pkgPath = "github.com/alecthomas/gengen/generic"
 const genericPkg = "generic"
 
 var genericTypes = []string{"T", "U", "V"}
@@ -79,8 +79,8 @@ func main() {
 	}
 
 	err = generate(w, *filenameArg, *typeArgs...)
-	w.Close()
 	kingpin.FatalIfError(err, "")
+	w.Close()
 
 	err = pipe.Run(p)
 	kingpin.FatalIfError(err, "")
