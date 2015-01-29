@@ -52,8 +52,11 @@ func generate(filename string, typenames ...string) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	err = format.Node(&buf, fset, f)
-	return buf.Bytes(), err
+	if err = format.Node(&buf, fset, f); err != nil {
+		return nil, err
+	}
+
+	return format.Source(buf.Bytes())
 }
 
 func main() {
