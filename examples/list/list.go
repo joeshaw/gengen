@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/joeshaw/gengen/generic"
+	"github.com/alecthomas/gengen/generic"
 )
 
 type List struct {

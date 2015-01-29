@@ -90,7 +90,7 @@ package main
 import (
 	"io"
 
-	"github.com/joeshaw/gengen/generic"
+	"github.com/alecthomas/gengen/generic"
 )
 
 //TODO check vs orig initialize/finalize

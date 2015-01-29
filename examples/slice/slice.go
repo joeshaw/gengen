@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/joeshaw/gengen/generic"
+	"github.com/alecthomas/gengen/generic"
 )
 
 type MySlice []generic.T

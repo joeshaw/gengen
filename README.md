@@ -16,7 +16,7 @@ source code and compile that into our projects.
 
 Get the `gengen` tool:
 
-    $ go get github.com/joeshaw/gengen
+    $ go get github.com/alecthomas/gengen
 
 Create a Go source file with a generic implementation.  For example,
 this contrived linked-list implementation in `list.go`:
@@ -24,7 +24,8 @@ this contrived linked-list implementation in `list.go`:
 ```go
 package list
 
-import "github.com/joeshaw/gengen/generic"
+//go:generate gengen -o list_string.go -r "List -> StringList" list.go string
+import "github.com/alecthomas/gengen/generic"
 
 type List struct {
     data generic.T
@@ -233,7 +234,7 @@ Finally, generate your implementations:
 
 The `gengen` tool looks through the source code for specific strings
 in order to replace them in the AST.  Specifically, it looks for the
-import `github.com/joeshaw/gengen/generic` and the types `generic.T`,
+import `github.com/alecthomas/gengen/generic` and the types `generic.T`,
 `generic.U`, and `generic.V`.  If you need to change these, you will
 also have to change the `gengen.go` source.
 
