@@ -85,7 +85,7 @@
 // getting the next or previous iterated item is performed in about 13-14 ns.
 // This is the nice O(1) property of B+trees usually not found in other tree
 // types.
-package main
+package btree
 
 import (
 	"io"

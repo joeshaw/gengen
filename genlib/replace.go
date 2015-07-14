@@ -5,7 +5,7 @@
 // This file was copied from github.com/jessevdk/go-operators,
 // which itself was forked from go/ast walk.go.
 
-package main
+package genlib
 
 import (
 	"fmt"
