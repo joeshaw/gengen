@@ -103,16 +103,28 @@ func replaceFiles(source_dir, dest_dir string) {
 
 	for _, source := range sources {
 		dest := path.Join(dest_dir, path.Base(source))
-		if err := os.Rename(source, dest); err != nil {
-			if patherr, ok := err.(*os.LinkError); ok {
-				if errno, ok := patherr.Err.(syscall.Errno); ok {
-					if errno == syscall.EXDEV {
-						if err = copyBytes(source, dest); err == nil {
-							continue
-						}
-					}
-				}
-			}
+
+		// attempt a simple rename
+		err := os.Rename(source, dest)
+		if err == nil {
+			continue
+		}
+
+		// /tmp is often a ramdisk so check for EXDEV
+		linkerr, ok := err.(*os.LinkError)
+		if !ok {
+			die(err)
+		}
+		errno, ok := linkerr.Err.(syscall.Errno)
+		if !ok {
+			die(err)
+		}
+		if errno != syscall.EXDEV {
+			die(err)
+		}
+
+		// have to copy the bytes explicitly
+		if err = copyBytes(source, dest); err != nil {
 			die(err)
 		}
 	}
