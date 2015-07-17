@@ -14,10 +14,14 @@ import (
 	"syscall"
 
 	"github.com/joeshaw/gengen/genlib"
+	"golang.org/x/tools/imports"
 )
 
 func main() {
-	var outdir = flag.String("o", ".", "output directory")
+	var (
+		outdir     = flag.String("o", ".", "output directory")
+		fixImports = flag.Bool("i", true, "run go files through `goimports`")
+	)
 	flag.Parse()
 
 	if flag.NArg() < 2 {
@@ -59,7 +63,7 @@ func main() {
 	// convert all source files into the tmp dir
 	for _, source_path := range sourcefiles {
 		dest_path := path.Join(tdir, path.Base(source_path))
-		err := convertFile(dest_path, source_path, types...)
+		err := convertFile(dest_path, source_path, *fixImports, types...)
 		if err != nil {
 			die(err)
 		}
@@ -72,10 +76,23 @@ func main() {
 	os.RemoveAll(tdir)
 }
 
-func convertFile(dest_path, source_path string, types ...string) error {
+func convertFile(dest_path, source_path string, fixImports bool, types ...string) error {
 	buf, err := genlib.Generate(source_path, types...)
 	if err != nil {
 		return err
+	}
+
+	if fixImports {
+		buf, err = imports.Process(path.Base(source_path), buf, &imports.Options{
+			TabWidth:  8,
+			TabIndent: true,
+			Comments:  true,
+			Fragment:  true,
+			AllErrors: false,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	f, err := os.Create(dest_path)
