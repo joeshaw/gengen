@@ -18,7 +18,7 @@ Get the `gengen` tool:
 
     $ go get github.com/joeshaw/gengen
 
-Create a Go packagewith a generic implementation.  For example, this
+Create a Go package with a generic implementation.  For example, this
 contrived linked-list implementation in `list.go`, which lives in the
 `github.com/joeshaw/gengen/examples/list` package:
 
