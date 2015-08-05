@@ -4,8 +4,8 @@ To run the generic version:
 
 To generate the `int` version:
 
-    $ gengen list.go int > list_int.go
+    $ gengen -o list_int github.com/joeshaw/gengen/examples/list
 
 To run the `int` version:
 
-    $ go run list_int.go
+    $ go run list_int/list.go

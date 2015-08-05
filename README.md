@@ -18,8 +18,9 @@ Get the `gengen` tool:
 
     $ go get github.com/joeshaw/gengen
 
-Create a Go source file with a generic implementation.  For example,
-this contrived linked-list implementation in `list.go`:
+Create a Go packagewith a generic implementation.  For example, this
+contrived linked-list implementation in `list.go`, which lives in the
+`github.com/joeshaw/gengen/examples/list` package:
 
 ```go
 package list
@@ -74,9 +75,9 @@ at runtime.
 However, you can generate a specifically typed version of this file by
 running it through `gengen`:
 
-    $ gengen list.go string > list_string.go
+    $ gengen github.com/joeshaw/gengen/examples/list string
 
-`list_string.go` will look like this:
+This will generate a `list.go` that looks like this:
 
 ```go
 package list
@@ -127,7 +128,12 @@ additional generic types for cases when you want to support more than
 one type.  Simply pass the additional types on the `gengen` command
 line:
 
-    $ gengen btree.go int string > btree_int_string.go
+    $ gengen github.com/joeshaw/gengen/examples/btree int string
+
+Lastly, you can use `gengen` in conjunction with `go generate`.  For
+example:
+
+    //go:generate gengen -o ./btree github.com/joeshaw/gengen/examples/btree string int
 
 ## Caveats ##
 
@@ -136,22 +142,16 @@ line:
 Currently `gengen` can support up to three generic types: `generic.T`,
 `generic.U`, and `generic.V`.
 
-### Naming ###
+### Package Naming ###
 
 `gengen` does not currently do anything with naming of packages or
-types.  This means that you can't compile both a generic version and a
-type specific version in the same package without modification.
-Fortunately, `gofmt -r` is perfect for this:
+types.  If you want to import multiple copies of a package (either
+generic or typed) you will need to rename the package at import time.
+For example, after generating a typed btree into
+`github.com/example/btree`:
 
-```go
-type MyGenericSlice []generic.T
-```
-
-    $ gengen slice_generic.go string | gofmt -r 'MyGenericSlice -> MyStringSlice' > slice_string.go
-
-```go
-type MyStringSlice []string
-```
+    import "github.com/example/btree"
+    import gen_btree "github.com/joeshaw/gengen/examples/btree"
 
 ### Using zero values ###
 

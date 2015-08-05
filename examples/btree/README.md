@@ -9,5 +9,4 @@ I have taken that and replaced `KEY` with `generic.T` and `VALUE` with
 
 Use `gengen` to generate a type-specific instance:
 
-    $ gengen btree int string > main/btree.go
-    $ go run main/*.go
+    $ gengen -o my_btree github.com/joeshaw/gengen/examples/btree int string
