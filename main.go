@@ -165,7 +165,7 @@ func copyBytes(source, dest string) error {
 }
 
 func findPkgPath(name string) string {
-	for _, dir := range strings.Split(os.Getenv("GOPATH"), ";") {
+	for _, dir := range strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator)) {
 		fullpath := path.Join(dir, "src", name)
 		if exists(fullpath) {
 			return fullpath
