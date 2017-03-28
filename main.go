@@ -8,26 +8,40 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/joeshaw/gengen/genlib"
 	"golang.org/x/tools/imports"
 )
 
+const (
+	usageTemplate = `usage: %s [-o <output_dir>] <package> <replacement types...>
+example: %s -o ./btree github.com/joeshaw/gengen/examples/btree string string
+`
+
+	osEx        = 0x1
+	osWrite     = 0x2
+	osRead      = 0x4
+	osUserShift = 0x6
+
+	osUserR   = osRead << osUserShift
+	osUserW   = osWrite << osUserShift
+	osUserX   = osEx << osUserShift
+	osUserRW  = osUserR | osUserW
+	osUserRWX = osUserRW | osUserX
+)
+
 func main() {
 	var (
-		outdir     = flag.String("o", ".", "output directory")
+		outDir     = flag.String("o", ".", "output directory")
 		fixImports = flag.Bool("i", true, "run go files through `goimports`")
 	)
 	flag.Parse()
 
 	if flag.NArg() < 2 {
 		cmd := os.Args[0]
-		fmt.Fprintf(os.Stderr, "usage: %s [-o <output_dir>] <package> <replacement types...>\n", cmd)
-		fmt.Fprintf(os.Stderr, "example: %s -o ./btree github.com/joeshaw/gengen/examples/btree string string\n", cmd)
+		fmt.Fprintf(os.Stderr, usageTemplate, cmd, cmd)
 		os.Exit(1)
 	}
 
@@ -37,53 +51,56 @@ func main() {
 	}
 
 	// run a "go get <pkg>"
+	// TODO(joeshaw): users probably should go get template-packages themselves
 	err := exec.Command("go", "get", flag.Arg(0)).Run()
 	if err != nil {
 		die(err)
 	}
 
 	// resolve the path into which we (might have) just installed it
-	pkgpath := findPkgPath(flag.Arg(0))
-	if pkgpath == "" {
+	pkgPath := findPkgPath(flag.Arg(0))
+	if pkgPath == "" {
 		die(fmt.Errorf("couldn't find %s", flag.Arg(0)))
 	}
 
 	// list the source files
-	sourcefiles, err := filepath.Glob(path.Join(pkgpath, "*.go"))
+	sourceFiles, err := filepath.Glob(filepath.Join(pkgPath, "*.go"))
 	if err != nil {
 		die(err)
 	}
 
 	// create a temporary directory
-	tdir, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		die(err)
 	}
 
 	// convert all source files into the tmp dir
-	for _, source_path := range sourcefiles {
-		dest_path := path.Join(tdir, path.Base(source_path))
-		err := convertFile(dest_path, source_path, *fixImports, types...)
+	for _, sourcePath := range sourceFiles {
+		destPath := filepath.Join(tempDir, filepath.Base(sourcePath))
+		err := convertFile(destPath, sourcePath, *fixImports, types...)
 		if err != nil {
 			die(err)
 		}
 	}
 
 	// move the converted files into our output dir
-	replaceFiles(tdir, *outdir)
+	replaceFiles(tempDir, *outDir)
 
 	// remove the temporary directory
-	os.RemoveAll(tdir)
+	os.RemoveAll(tempDir)
 }
 
-func convertFile(dest_path, source_path string, fixImports bool, types ...string) error {
-	buf, err := genlib.Generate(source_path, types...)
+func convertFile(
+	destPath, sourcePath string, fixImports bool, types ...string,
+) error {
+	buf, err := genlib.Generate(sourcePath, types...)
 	if err != nil {
 		return err
 	}
 
 	if fixImports {
-		buf, err = imports.Process(path.Base(source_path), buf, &imports.Options{
+		buf, err = imports.Process(filepath.Base(sourcePath), buf, &imports.Options{
 			TabWidth:  8,
 			TabIndent: true,
 			Comments:  true,
@@ -95,10 +112,11 @@ func convertFile(dest_path, source_path string, fixImports bool, types ...string
 		}
 	}
 
-	f, err := os.Create(dest_path)
+	f, err := os.Create(destPath)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	_, err = io.Copy(f, bytes.NewBuffer(buf))
 	if err != nil {
@@ -108,18 +126,21 @@ func convertFile(dest_path, source_path string, fixImports bool, types ...string
 	return nil
 }
 
-func replaceFiles(source_dir, dest_dir string) {
-	sources, err := filepath.Glob(path.Join(source_dir, "*.go"))
+func replaceFiles(sourceDir, destDir string) {
+	sources, err := filepath.Glob(filepath.Join(sourceDir, "*.go"))
 	if err != nil {
 		die(err)
 	}
 
-	if !exists(dest_dir) {
-		os.MkdirAll(dest_dir, 0755)
+	if !exists(destDir) {
+		err := os.MkdirAll(destDir, osUserRWX)
+		if err != nil {
+			die(err)
+		}
 	}
 
 	for _, source := range sources {
-		dest := path.Join(dest_dir, path.Base(source))
+		dest := filepath.Join(destDir, filepath.Base(source))
 
 		// attempt a simple rename
 		err := os.Rename(source, dest)
@@ -165,10 +186,10 @@ func copyBytes(source, dest string) error {
 }
 
 func findPkgPath(name string) string {
-	for _, dir := range strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator)) {
-		fullpath := path.Join(dir, "src", name)
-		if exists(fullpath) {
-			return fullpath
+	for _, dir := range filepath.SplitList(os.Getenv("GOPATH")) {
+		fullPath := filepath.Join(dir, "src", name)
+		if exists(fullPath) {
+			return fullPath
 		}
 	}
 	return ""
