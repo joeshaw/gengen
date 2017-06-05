@@ -15,6 +15,8 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+var defaultNames = []string{"T", "U", "V"}
+
 func main() {
 	var (
 		outDir     = flag.String("o", ".", "output directory")
@@ -29,9 +31,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	types := make([]string, flag.NArg()-1)
-	for i := 1; i < flag.NArg(); i++ {
-		types[i-1] = flag.Arg(i)
+	types := make(map[string]string)
+	typeCount := flag.NArg() - 1
+	if typeCount > len(defaultNames) {
+		typeCount = len(defaultNames)
+	}
+	for i, newName := range defaultNames[0:typeCount] {
+		types[newName] = flag.Arg(i + 1)
 	}
 
 	// run a "go get <pkg>"
@@ -61,7 +67,7 @@ func main() {
 	// convert all source files into the tmp dir
 	for _, sourcePath := range sourceFiles {
 		destPath := filepath.Join(tempDir, filepath.Base(sourcePath))
-		err := convertFile(destPath, sourcePath, *fixImports, types...)
+		err := convertFile(destPath, sourcePath, *fixImports, types)
 		if err != nil {
 			die(err)
 		}
@@ -74,8 +80,8 @@ func main() {
 	os.RemoveAll(tempDir)
 }
 
-func convertFile(destPath, sourcePath string, fixImports bool, types ...string) error {
-	buf, err := genlib.Generate(sourcePath, types...)
+func convertFile(destPath, sourcePath string, fixImports bool, types map[string]string) error {
+	buf, err := genlib.Generate(sourcePath, types)
 	if err != nil {
 		return err
 	}
