@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/joeshaw/gengen/genlib"
@@ -28,16 +29,32 @@ func main() {
 		cmd := os.Args[0]
 		fmt.Fprintf(os.Stderr, "usage: %s [-o <output_dir>] <package> <replacement types...>\n", cmd)
 		fmt.Fprintf(os.Stderr, "example: %s -o ./btree github.com/joeshaw/gengen/examples/btree string string\n", cmd)
+		fmt.Fprintf(os.Stderr, "example: %s -o ./btree github.com/joeshaw/gengen/examples/btree T=string U=string\n", cmd)
 		os.Exit(1)
 	}
 
+	nakedTypeCount := 0
+
 	types := make(map[string]string)
-	typeCount := flag.NArg() - 1
-	if typeCount > len(defaultNames) {
-		typeCount = len(defaultNames)
-	}
-	for i, newName := range defaultNames[0:typeCount] {
-		types[newName] = flag.Arg(i + 1)
+	for i := 1; i < flag.NArg(); i++ {
+		arg := flag.Arg(i)
+		if strings.Contains(arg, "=") {
+			kv := strings.SplitN(arg, "=", 2)
+			if len(kv[0]) == 1 && strings.Compare(kv[0], "A") >= 0 && strings.Compare(kv[0], "Z") <= 0 {
+				types[kv[0]] = kv[1]
+			} else {
+				fmt.Fprintf(os.Stderr, "'%s' is an invalid name for a type alias must be a letter between 'A' and 'Z'\n", kv[0])
+				os.Exit(1)
+			}
+		} else {
+			if nakedTypeCount < len(defaultNames) {
+				types[defaultNames[nakedTypeCount]] = arg
+				nakedTypeCount++
+			} else {
+				fmt.Fprintf(os.Stderr, "Passed in more than %d types without an alias\n", len(defaultNames))
+				os.Exit(1)
+			}
+		}
 	}
 
 	// run a "go get <pkg>"
