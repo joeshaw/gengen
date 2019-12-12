@@ -13,9 +13,7 @@ import (
 const pkgPath = "github.com/joeshaw/gengen/generic"
 const genericPkg = "generic"
 
-var genericTypes = []string{"T", "U", "V"}
-
-func Generate(filename string, typenames ...string) ([]byte, error) {
+func Generate(filename string, lookup map[string]string) ([]byte, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
 	if err != nil {
@@ -32,11 +30,8 @@ func Generate(filename string, typenames ...string) ([]byte, error) {
 		if !ok || x.Name != genericPkg {
 			return node
 		}
-
-		for i, t := range genericTypes {
-			if se.Sel.Name == t {
-				return &ast.Ident{NamePos: 0, Name: typenames[i]}
-			}
+		if newName, ok := lookup[se.Sel.Name]; ok {
+			return &ast.Ident{NamePos: 0, Name: newName}
 		}
 
 		return node
