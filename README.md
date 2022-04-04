@@ -1,5 +1,9 @@
 # gengen - A generics code generator for Go #
 
+🎉🎉 **Go 1.18 includes native support for generics!** 🎉🎉
+
+---
+
 People often lament the lack of generics in Go, and use it as an
 [excuse to dismiss the
 language](http://permalink.gmane.org/gmane.comp.lang.go.general/127789).
@@ -14,9 +18,9 @@ source code and compile that into our projects.
 
 ## How to use it ##
 
-Get the `gengen` tool:
+Install the `gengen` tool:
 
-    $ go get github.com/joeshaw/gengen
+    $ go install github.com/joeshaw/gengen@latest
 
 Create a Go package with a generic implementation.  For example, this
 contrived linked-list implementation in `list.go`, which lives in the
